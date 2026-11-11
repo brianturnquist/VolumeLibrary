@@ -1,0 +1,103 @@
+!============================!
+!   VolumeLibrary : numlog   !
+!============================!
+  !== last modified  4-9-2002
+subroutine NUMLOG(OPT,EVOD,LMERCH,MAXLEN,MINLEN,TRIM,&
+     &NUMSEG)
+
+  !--  THIS SUBROUTINE WILL DETERMINE THE NUMBER OF MERCHANTABLE
+  !--  SEGMENTS IN A GIVEN MERCHANTABLE LENGTH OF TREE STEM,
+  !--  ACCORDING TO ONE OF THE DEFINED SEGMENTATION RULES IN
+  !--  THE VOLUME ESTIMATOR HANDBOOK FSH ???.
+
+  !--  THE LOGIC WAS DEVELOPED BY JIM BRICKELL, TCFPM R-1, AND
+  !--  IMPLEMENTED BY WO-TM.
+
+  ! Variables
+  integer :: EVOD,NUMSEG,OPT
+  real    :: LEFTOV,LMERCH,MAXLEN,MINLEN,TRIM
+
+  !--   DETERMINE IF THERE IS A MERCHANTABLE SEGMENT
+  !LMERCH = 4
+  !MAXLEN = 70
+  !MINLEN = 4
+  !TRIM = 0
+  NUMSEG = INT(LMERCH/(MAXLEN+TRIM))
+  LEFTOV = LMERCH-((MAXLEN+TRIM)*FLOAT(NUMSEG))
+
+  if (NUMSEG .gt.0.or. LEFTOV .ge. MINLEN) then
+
+     !--       THERE IS MERCHANTABLE MATERIAL
+
+     if (OPT .lt.20) then
+
+        !--           TOP SEGMENT CAN BE COMBINED - ODD LENGTHS OK
+        !--             CONSIDER ROUNDING OF TRIM TO NEAREST FOOT
+
+        if (LEFTOV .ge. (TRIM+0.5))  NUMSEG = NUMSEG+1
+
+     else if (OPT .eq.21.or. OPT .eq.22) then
+
+        !--           TOP SEGMENT CAN BE COMBINED - CHECK ON ODD LENGTHS
+        !--             CONSIDER ROUNDING OF TRIM TO NEAREST FOOT
+        !--                      OR NEAREST EVEN FOOT
+
+        if (EVOD .eq.1.and. LEFTOV .ge. (TRIM+0.5)) then
+           NUMSEG = NUMSEG+1
+        end if
+        if (EVOD .eq.2.and. LEFTOV .ge. (TRIM+1.0)) then
+           NUMSEG = NUMSEG+1
+        end if
+
+        !--       TOP SEGMENT WILL BE ON ITS' OWN
+
+     else if (OPT .eq.23) then
+        if (LEFTOV .ge. (TRIM+MINLEN)) NUMSEG = NUMSEG+1
+     else if (OPT .eq.24) then
+        if (LEFTOV .ge. ((MAXLEN+TRIM)/4.0)) NUMSEG = NUMSEG+1
+     end if
+
+     !--   THERE IS NO MERCHANTABLE MATERIAL
+
+  else
+     NUMSEG = 0
+  end if
+  ! Added max number of logs to 20 to avoid exception (20250613)
+  if (NUMSEG.gt.20) NUMSEG = 20
+  return
+end
+
+  !--  VARIABLES OF INTEREST ARE:
+
+  !--  EVOD - INTEGER - EVEN OR ODD LENGTH SEGMENTS ALLOWED
+  !--         SEGMENTATION OPTIONS 11-14 ALLOW ODD LENGTHS
+  !--         BY DEFINITION
+  !--        1 = ODD SEGMENTS ALLOWED
+  !--        2 = ONLY EVEN SEGMENTS ALLOWED
+
+  !--  NUMSEG - INTEGER - THE COMPUTED NUMBER OF SEGMENTS
+
+  !--  OPT - INTEGER - SPECIFIED SEGMENTATION OPTION
+  !--        OPTION CODES ARE AS FOLLOWS:
+  !--        11 = 16 FT LOG SCALE (FSH 2409.11)
+  !--        12 = 20 FT LOG SCALE (FSH 2409.11)
+  !--        13 = 32 FT LOG SCALE
+  !--        14 = 40 FT LOG SCALE
+  !--        21 = NOMINAL LOG LENGTH (NLL), IF TOP LESS THAN HALF
+  !--             OF NLL IT IS COMBINED WITH NEXT LOWEST LOG AND
+  !--             SEGMENTED ACORDING TO RULES FOR NLL MAX LENGTH.
+  !--             IF SEGMENT IS HALF OR MORE OF NLL THEN SEGMENT
+  !--             STANDS ON ITS' OWN.
+  !--        22 = NOMINAL LOG LENGTH, TOP IS PLACED WITH NEXT LOWEST
+  !--             LOG AND SEGMENTED ACORDING TO RULES FOR NLL MAX
+  !--             LENGTH.
+  !--        23 = NOMINAL LOG LENGTH, TOP SEGMENT STANDS ON ITS' OWN.
+  !--        24 = NOMINAL LOG LENGTH, TOP SEGMENT LESS THAN 1/4 OF
+  !--             NLL THEN SEGMENT IS DROPED, IF SEGMENT IS 1/4 TO
+  !--             3/4 THEN SEGMENT IS = 1/2 OF NNL, IF SEGMENT IS
+  !--             GREATER THAN 3/4 OF NNL THEN SEGMENT IS = NNL.
+  !--  LEFTOV - REAL - LEFTOVER OR FRACTIONAL PORTION OF A SEGMENT
+  !--  LMERCH - REAL - GIVEN MERCHANTABLE LENGTH OF STEM
+  !--  MAXLEN - REAL - MAXIMUM SEGMENT LENGTH
+  !--  MINLEN - REAL - MINIMUM SEGMENT LENGTH
+  !--  TRIM - REAL - TRIM LENGTH FOR EACH SEGMENT
