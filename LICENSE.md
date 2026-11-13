@@ -4,6 +4,16 @@ public domain within the United States.
 Additionally, we waive copyright and related rights in the work
 worldwide through the CC0 1.0 Universal public domain dedication.
 
+## This fork
+
+This repository is a fork of the official National Volume Estimator Library,
+maintained as part of mFVS. The changes made in this fork, including the
+conversion of the Fortran source to free-form `.f90`, are not works of the
+United States Government. To the extent possible under law, the contributors
+to this fork have waived all copyright and related or neighboring rights to
+their changes worldwide through the same CC0 1.0 Universal public domain
+dedication.
+
 ## CC0 1.0 Universal Summary
 
 This is a human-readable summary of the
