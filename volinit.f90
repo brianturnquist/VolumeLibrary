@@ -851,6 +851,9 @@ subroutine VOLINITNVB(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
      if (ERRFLAG.gt.0) return
      if (FIASPCD.eq.0) read (V_EQN(8:10),'(I3)') FIASPCD
      if (FIASPCD.eq.204) FIASPCD = 202
+     ! NVB_DefaultEq assigns only NVBEQN(1:10). Blank the eleventh character,
+     ! which NVBC and SPEQCOEF test, instead of passing undefined memory.
+     NVBEQN = ' '
      call NVB_DefaultEq(REGN,FORST,DIST,FIASPCD,NVBEQN,ERRFLAG)
      if (ERRFLAG.gt.0) then
         !Check if woodland species and calculate biomass based FIA equation
