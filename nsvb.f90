@@ -1356,6 +1356,7 @@ end
 
   ! Get EcoProvince for a given national forest district
 subroutine NVB_EcoProv(REGN, FORST, DIST, iPROV)
+  use DIGITREAD_MOD
   implicit none
   ! Variables
   integer :: REGN,iPROV,DistNum,iFORST,iDist,ForstNum
@@ -1370,13 +1371,15 @@ subroutine NVB_EcoProv(REGN, FORST, DIST, iPROV)
      FORST(1:1) = '0'
      if (FORST(2:2) .lt. '0') FORST(2:2) = '0'
   end if
-  read (FORST,'(i2)') iFORST
+  ! DIGITREAD converts digit-and-blank fields after the in-place padding;
+  ! any other field keeps the READ.
+  if (.not.DIGITREAD(FORST,iFORST)) read (FORST,'(i2)') iFORST
   if (DIST(2:2) .lt. '0') then
      DIST(2:2) = DIST(1:1)
      DIST(1:1) = '0'
      if (DIST(2:2) .lt. '0') DIST(2:2) = '0'
   end if
-  read (DIST,'(i2)') iDIST
+  if (.not.DIGITREAD(DIST,iDIST)) read (DIST,'(i2)') iDIST
   DistNum = REGN*10000 + iFORST*100 + iDIST
   DONE = 0
   FIRST = 1
@@ -1435,6 +1438,7 @@ end
 
   ! Get default for a species in a given national forest district
 subroutine NVB_DefaultEq(REGN,FORST,DIST,SPCD,NVBEQ,ERRFLG)
+  use DIGITREAD_MOD
   implicit none
   ! Variables
   integer :: REGN,SPCD,ERRFLG,V_SPCD
@@ -1490,7 +1494,8 @@ subroutine NVB_DefaultEq(REGN,FORST,DIST,SPCD,NVBEQ,ERRFLG)
   !          ENDIF
   !          V_SPCD = SPGRPCD
   !      ENDIF
-  write (PROV, '(I4)') iPROV
+  ! DIGITWRITE writes values that fit as digits; others keep the WRITE.
+  if (.not.DIGITWRITE(iPROV,PROV,4)) write (PROV, '(I4)') iPROV
   if (iPROV.eq.0) PROV = '0000'
   if (iPROV.gt.999) then
      NVBEQ = 'NVBM'//PROV(2:4)
@@ -1498,7 +1503,7 @@ subroutine NVB_DefaultEq(REGN,FORST,DIST,SPCD,NVBEQ,ERRFLG)
      NVBEQ = 'NVB0'//PROV(2:4)
   end if
 
-  write (SPC, '(I3)') V_SPCD
+  if (.not.DIGITWRITE(V_SPCD,SPC,3)) write (SPC, '(I3)') V_SPCD
   if (V_SPCD.lt.10) then
      NVBEQ = NVBEQ(1:7)//'00'//SPC(3:3)
   else if (V_SPCD.lt.100) then
@@ -1574,6 +1579,7 @@ end
 
   !get species regional weight factor
 subroutine GetRegnWF(REGN,FORST,SPCD,WtFac,DeadWF,PROD)
+  use DIGITREAD_MOD
   implicit none
   ! Variables
   integer :: REGN,SPCD,DONE,I,IFORST
@@ -1589,7 +1595,8 @@ subroutine GetRegnWF(REGN,FORST,SPCD,WtFac,DeadWF,PROD)
   WtFac = 0
   WtFac2 = 0
   DeadWF = 0
-  read(FORST,'(i2)') IFORST
+  ! DIGITREAD converts a digit-and-blank field; any other field keeps the READ.
+  if (.not.DIGITREAD(FORST,IFORST)) read(FORST,'(i2)') IFORST
   if (REGN.eq.0) DONE = -1
   do while (DONE.eq.0)
      I = I + 1

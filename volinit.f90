@@ -13,6 +13,7 @@ subroutine VOLINIT(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
 
   use CHARMOD
   use DEBUG_MOD
+  use DIGITREAD_MOD
   use VOLINPUT_MOD
   implicit none
 
@@ -181,14 +182,16 @@ subroutine VOLINIT(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
   if (VOLEQ(1:2).eq.'bd') VOLEQ(1:2) = 'BD'
   if (VOLEQ(1:2).eq.'CU'.or.VOLEQ(1:2).eq.'BD') then
      if (CONSPEC(1:1).ge.'0'.and.CONSPEC(1:1).le.'9') then
+        ! DIGITREAD converts digit-and-blank fields of the same width;
+        ! any other field keeps the READ.
         if (CONSPEC(4:4).ge.'0'.and.CONSPEC(4:4).le.'9') then
-           read(CONSPEC(1:4),'(I4)')SPN
+           if (.not.DIGITREAD(CONSPEC(1:4),SPN)) read(CONSPEC(1:4),'(I4)')SPN
         else if (CONSPEC(3:3).ge.'0'.and.CONSPEC(3:3).le.'9') then
-           read(CONSPEC(1:3),'(I3)')SPN
+           if (.not.DIGITREAD(CONSPEC(1:3),SPN)) read(CONSPEC(1:3),'(I3)')SPN
         else if (CONSPEC(2:2).ge.'0'.and.CONSPEC(2:2).le.'9') then
-           read(CONSPEC(1:2),'(I2)')SPN
+           if (.not.DIGITREAD(CONSPEC(1:2),SPN)) read(CONSPEC(1:2),'(I2)')SPN
         else
-           read(CONSPEC(1:1),'(I1)')SPN
+           if (.not.DIGITREAD(CONSPEC(1:1),SPN)) read(CONSPEC(1:1),'(I1)')SPN
         end if
      else
         SPN = 0
@@ -224,13 +227,15 @@ subroutine VOLINIT(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
   !-----Set the default DIST to 01---------------------
   !      IF(IDIST.NE.IDIST) IDIST = 1
   if (IDIST.eq.0) IDIST = 1
-  write (DIST, '(I2)') IDIST
+  ! DIGITWRITE writes values that fit as digits; others keep the WRITE.
+  if (.not.DIGITWRITE(IDIST,DIST,2)) write (DIST, '(I2)') IDIST
   if (DIST(1:1) .lt. '0') DIST(1:1) = '0'
   !-----End for DIST (04/19/2016)
 
   if (VOLEQ .eq. "" .and. CTYPE.eq.'F') then
      VAR = '  '
-     read(CONSPEC,'(I3)')SPEC
+     ! An I3 READ of the 4-character CONSPEC consumes CONSPEC(1:3).
+     if (.not.DIGITREAD(CONSPEC(1:3),SPEC)) read(CONSPEC,'(I3)')SPEC
      !        DIST = '01'
      call VOLEQDEF(VAR,REGN,FORST,DIST,SPEC,PROD,EQNUM,ERRFLAG)
      VOLEQ = EQNUM
@@ -250,7 +255,7 @@ subroutine VOLINIT(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
      FORST(1:1) = '0'
      if (FORST(2:2) .lt. '0') FORST(2:2) = '0'
   end if
-  read(FORST,'(i2)') IFORST
+  if (.not.DIGITREAD(FORST,IFORST)) read(FORST,'(i2)') IFORST
 
   do I = 1,10
      if (ICHAR(VOLEQ(I:I)).ge.97.and. ICHAR(VOLEQ(I:I)).le.122)&
@@ -514,7 +519,7 @@ subroutine VOLINIT(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
      !  HANN PROFILE MODEL FOR BLM *
 
      SPECIES = VOLEQ(8:10)
-     read(SPECIES,'(i3)') SPCODE
+     if (.not.DIGITREAD(SPECIES,SPCODE)) read(SPECIES,'(i3)') SPCODE
 
      if (VOLEQ(2:3) .eq. '32') then
         MAXLEN = 32
@@ -589,7 +594,7 @@ subroutine VOLINIT(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
      !  If stump DIB is not calculated, use the following to calculate stump VOL
      if (VOL(14).le.0.0) then
         SPECIES = VOLEQ(8:10)
-        read(SPECIES,'(i3)') SPEC
+        if (.not.DIGITREAD(SPECIES,SPEC)) read(SPECIES,'(i3)') SPEC
         HTUP = STUMP
         call RAILEVOL(SPEC, DBHOB, HTUP, VOLIB, VOLOB)
         VOL(14) = VOLIB
@@ -639,9 +644,11 @@ subroutine VOLINIT(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
   if (CTYPE.eq.'C') then
      SPCD = 0
      if (VERIFY(CONSPEC,"0123456789 ").eq.0) then
-        read(CONSPEC,'(I3)') SPCD
+        if (.not.DIGITREAD(CONSPEC(1:3),SPCD)) read(CONSPEC,'(I3)') SPCD
      end if
-     if (SPCD.eq.0) read(VOLEQ(8:10),'(I3)') SPCD
+     if (SPCD.eq.0) then
+        if (.not.DIGITREAD(VOLEQ(8:10),SPCD)) read(VOLEQ(8:10),'(I3)') SPCD
+     end if
      call GetRegnWF(REGN,FORST,SPCD,GRNWF,DeadWF,PROD)
      WtFac2 = GRNWF
      if (NOLOGS.gt.0) then
@@ -702,6 +709,7 @@ subroutine VOLINITNVB(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
      &BA,SI,CTYPE,ERRFLAG,IDIST,BRKHT,BRKHTD,FIASPCD,DRYBIO,&
      &GRNBIO,MRULEFLG,MERRULES,CULLMSTOP)
   use CHARMOD
+  use DIGITREAD_MOD
   use MRULES_MOD
   use VOLINPUT_MOD
   implicit none
@@ -759,7 +767,8 @@ subroutine VOLINITNVB(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
   Vfactor = 1
   ERRFLAG2 = 0
   if (IDIST.eq.0) IDIST = 1
-  write (DIST, '(I2)') IDIST
+  ! DIGITWRITE writes values that fit as digits; others keep the WRITE.
+  if (.not.DIGITWRITE(IDIST,DIST,2)) write (DIST, '(I2)') IDIST
   if (FORST(2:2).lt.'0'.or.FORST(2:2).gt.'9') then
      FORST(2:2) = FORST(1:1)
      FORST(1:1) = '0'
@@ -834,12 +843,13 @@ subroutine VOLINITNVB(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
      !When using FIA equation number like CU000001 or BD000001, the FIASPCD is passed in from CONSPEC variable
      !IF(VOLEQ(1:2).EQ.'CU'.OR.VOLEQ(1:2).EQ.'BD') THEN
      if (FIASPCD.gt.9) then
+        ! Each width leaves the rest of the 4-character CONSPEC blank.
         if (FIASPCD.gt.999) then
-           write(CONSPEC, '(I4)') FIASPCD
+           if (.not.DIGITWRITE(FIASPCD,CONSPEC,4)) write(CONSPEC, '(I4)') FIASPCD
         else if (FIASPCD.gt.99) then
-           write(CONSPEC, '(I3)') FIASPCD
+           if (.not.DIGITWRITE(FIASPCD,CONSPEC,3)) write(CONSPEC, '(I3)') FIASPCD
         else if (FIASPCD.gt.9) then
-           write(CONSPEC, '(I2)') FIASPCD
+           if (.not.DIGITWRITE(FIASPCD,CONSPEC,2)) write(CONSPEC, '(I2)') FIASPCD
         end if
      end if
      call VOLINIT(REGN,FORST,V_EQN,MTOPP,MTOPS,STUMP,DBHOB,&
@@ -849,7 +859,10 @@ subroutine VOLINITNVB(REGN,FORST,VOLEQ,MTOPP,MTOPS,STUMP,DBHOB,&
           &BFPFLG,CUPFLG,CDPFLG,SPFLG,CONSPEC,PROD,HTTFLL,LIVE,&
           &BA,SI,CTYPE,ERRFLAG,IDIST)
      if (ERRFLAG.gt.0) return
-     if (FIASPCD.eq.0) read (V_EQN(8:10),'(I3)') FIASPCD
+     if (FIASPCD.eq.0) then
+        ! DIGITREAD converts a digit-and-blank field; any other keeps the READ.
+        if (.not.DIGITREAD(V_EQN(8:10),FIASPCD)) read (V_EQN(8:10),'(I3)') FIASPCD
+     end if
      if (FIASPCD.eq.204) FIASPCD = 202
      ! NVB_DefaultEq assigns only NVBEQN(1:10). Blank the eleventh character,
      ! which NVBC and SPEQCOEF test, instead of passing undefined memory.
