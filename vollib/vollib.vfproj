@@ -72,6 +72,7 @@
 		<File RelativePath="..\clkcoef_mod.f90"/>
 		<File RelativePath="..\crzbiomass.f90"/>
 		<File RelativePath="..\debug_mod.f90"/>
+		<File RelativePath="..\digitread_mod.f90"/>
 		<File RelativePath="..\doyal78.f90"/>
 		<File RelativePath="..\dvest.f90"/>
 		<File RelativePath="..\f_alaska.f90"/>

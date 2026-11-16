@@ -24,6 +24,7 @@ subroutine NVBC(REGN,FORST,DIST,VOLEQ,DBHOB,HTTOT,MTOPP,MTOPS,&
      &HT1PRD,HT2PRD,STUMP,PROD,BRKHT,BRKHTD,LIVE,CR,CULL,DECAYCD,&
      &LOGLEN,LOGDIA,LOGVOL,BOLHT,LOGST,NOLOGP,NOLOGS,VOL,DRYBIO,GRNBIO,&
      &ERRFLG,FIASPCD,CTYPE)
+  use DIGITREAD_MOD
   implicit none
   ! Variables
   character(len=11) :: VOLEQ
@@ -80,6 +81,7 @@ subroutine NVBC(REGN,FORST,DIST,VOLEQ,DBHOB,HTTOT,MTOPP,MTOPS,&
   !Check if EcoPROV is provided in the VOLEQ
   EcoProv = 0
   if (VOLEQ(7:7).ne.'0') then
+     ! List-directed input is outside DIGITREAD's Iw equivalence.
      read (VOLEQ(5:7),*) EcoProv
      if (VOLEQ(4:4).eq.'M') then
         EcoProv = 1000 + EcoProv
@@ -150,17 +152,18 @@ subroutine NVBC(REGN,FORST,DIST,VOLEQ,DBHOB,HTTOT,MTOPP,MTOPS,&
   SFTHRD = 0
   CF = 0
   !should get the division from a crowsswalk using district and ecoregion
-  read (VOLEQ(5:7),'(i3)') DIVISION
+  ! DIGITREAD converts all-digit fields; any other field keeps the READ.
+  if (.not.DIGITREAD(VOLEQ(5:7),DIVISION)) read (VOLEQ(5:7),'(i3)') DIVISION
   if (VOLEQ(4:4).eq.'M') DIVISION = DIVISION + 1000
   if (FIASPCD.le.0) then
      if (LEN_TRIM(VOLEQ).eq.10) then
-        read (VOLEQ(8:10),'(i3)') SPCD
+        if (.not.DIGITREAD(VOLEQ(8:10),SPCD)) read (VOLEQ(8:10),'(i3)') SPCD
      else if (LEN_TRIM(VOLEQ).eq.11) then
         if (VOLEQ(11:11).ge.'0'.and.VOLEQ(11:11).le.'9') then
            !Allow 4-digit SPCD i the VOLEQ
-           read (VOLEQ(8:11),'(i4)') SPCD
+           if (.not.DIGITREAD(VOLEQ(8:11),SPCD)) read (VOLEQ(8:11),'(i4)') SPCD
         else
-           read (VOLEQ(8:10),'(i3)') SPCD
+           if (.not.DIGITREAD(VOLEQ(8:10),SPCD)) read (VOLEQ(8:10),'(i3)') SPCD
         end if
      end if
   else
@@ -835,6 +838,7 @@ end
   ! Calculate the volume or weight from a given VOLEQ
 subroutine CALC_EQVW(VOLEQ,D,H,CoefCnt,SPcoef,JKcoef,VW,ERRFLG,&
      &SPGRPCD,WDSG )
+  use DIGITREAD_MOD
   implicit none
   ! Variables
   character(len=11) :: VOLEQ
@@ -853,7 +857,8 @@ subroutine CALC_EQVW(VOLEQ,D,H,CoefCnt,SPcoef,JKcoef,VW,ERRFLG,&
      ERRFLG = 4
      return
   end if
-  read (VOLEQ(8:10),'(i3)') SPCD
+  ! DIGITREAD converts an all-digit field; any other field keeps the READ.
+  if (.not.DIGITREAD(VOLEQ(8:10),SPCD)) read (VOLEQ(8:10),'(i3)') SPCD
   if (SPCD.gt.0.and.SPCD.lt.10) then
      !SPCD is Jenkins group code
      call JKEQCOEF(SPCD,JKcoef,EQN,a,b,c)
@@ -991,6 +996,7 @@ end
   ! Get the equation coefficients for SPCD
 subroutine SPEQCOEF(VOLEQ,TOTROW,SPCOEF,SPCD,&
      &equation,a,a0,a1,b,b0,b1,b2,c,c1)
+  use DIGITREAD_MOD
   implicit none
   ! Variables
   character(len=11) :: VOLEQ
@@ -1000,13 +1006,15 @@ subroutine SPEQCOEF(VOLEQ,TOTROW,SPCOEF,SPCD,&
   STDORG = 0
   equation = 0
   DONE = 0
-  read (VOLEQ(8:10),'(i3)') SPCD
+  ! DIGITREAD converts all-digit fields; any other field keeps the READ.
+  ! SPCD is read before VOLEQ(5:7) is normalized, as before.
+  if (.not.DIGITREAD(VOLEQ(8:10),SPCD)) read (VOLEQ(8:10),'(i3)') SPCD
   do I = 5, 7
      if (VOLEQ(I:I).lt.'0'.or.VOLEQ(I:I).gt.'9') then
         VOLEQ(I:I) = '0'
      end if
   end do
-  read (VOLEQ(5:6), '(i2)') DIVISION
+  if (.not.DIGITREAD(VOLEQ(5:6),DIVISION)) read (VOLEQ(5:6), '(i2)') DIVISION
   DIVISION = DIVISION*10
   if (VOLEQ(4:4).eq.'M') DIVISION = DIVISION+1000
   if (LEN_TRIM(VOLEQ).eq.11.and.VOLEQ(11:11).eq.'P') STDORG = 1
