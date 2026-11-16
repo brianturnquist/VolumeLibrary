@@ -12,7 +12,7 @@ subroutine R8PREPCOEF(VOLEQ, COEFFS, ERRFLAG)
   integer :: ERRFLAG
 
   !      *** LOCAL VARIABLES ***
-  integer :: SPEC,GEOA,EQN,SPECPR,GEOAPR,EQNPR,SPGRP
+  integer :: SPEC,GEOA,EQN,SPGRP
   integer :: PTR,FIRST,LAST,HALF,GSPEC,CHECK,DONEFLAG,LASTFLAG
   integer :: DIBCNT,TOTCNT,FOURCNT,NINECNT
   ! Common blocks
@@ -53,83 +53,116 @@ subroutine R8PREPCOEF(VOLEQ, COEFFS, ERRFLAG)
      SPEC = 800
   end if
 
-  if (SPEC.ne.SPECPR .or. EQN.ne.EQNPR .or. GEOA.ne.GEOAPR) then
-     SPECPR = SPEC
-     EQNPR = EQN
-     GEOAPR = GEOA
-     GSPEC = GEOA*1000 + SPEC
+  ! COEFFS belongs to the caller, which may pass a fresh record for the
+  ! same equation. Always fill it: uninitialized previous-key locals (or
+  ! a saved key alone) cannot establish that this record has coefficients.
+  GSPEC = GEOA*1000 + SPEC
 
-     !     BINARY SEARCH FOR CORRECT COEFFICIENTS
-     DONEFLAG = 0
-     LASTFLAG = 0
-     FIRST = 1
-     LAST = 182
-     do 5, while (DONEFLAG.eq.0)
-     if (FIRST.eq.LAST) LASTFLAG = 1
-     !DETERMINE WHERE TO CHECK
-     HALF = ((LAST-FIRST+1)/2) + FIRST
+  !     BINARY SEARCH FOR CORRECT COEFFICIENTS
+  DONEFLAG = 0
+  LASTFLAG = 0
+  FIRST = 1
+  LAST = 182
+  do 5, while (DONEFLAG.eq.0)
+  if (FIRST.eq.LAST) LASTFLAG = 1
+  !DETERMINE WHERE TO CHECK
+  HALF = ((LAST-FIRST+1)/2) + FIRST
 
-     CHECK = R8CF(HALF,1)*1000+R8CF(HALF,2)
-     !FOUND THE COEFFECIENTS
-     if (GSPEC.eq.CHECK) then
-        PTR = HALF
-        DONEFLAG = 1
-        !MOVE DOWN THE LIST
-     else if (GSPEC.gt.CHECK) then
-        FIRST = HALF
-        !MOVE UP THE LIST
-     else if (GSPEC.lt.CHECK) then
-        LAST = HALF - 1
-     end if
-     !DID NOT FIND A MATCH
-     if (LASTFLAG.eq.1.and. DONEFLAG.eq.0) then
-        !END ROUTINE, NO MATCH
-        if (GEOA.eq.9) then
-           SPECPR = 0
-           EQNPR = 0
-           GEOAPR = 0
-           ERRFLAG = 6
-           go to 999
-           !SET GEOAPR TO 9 AND RETRY THE SEARCH
-        else
-           GEOA = 9
-           GSPEC = GEOA*1000 + SPEC
-           FIRST = 1
-           LAST = 182
-           LASTFLAG = 0
-        end if
-     end if
-     5 continue
-
-     !     END BINARY SEARCH
-
-     SPGRP = R8CF(PTR,3) + .5
-     if (SPGRP.ne.100.and. SPGRP.ne.300.and. SPGRP.ne.500) then
+  CHECK = R8CF(HALF,1)*1000+R8CF(HALF,2)
+  !FOUND THE COEFFECIENTS
+  if (GSPEC.eq.CHECK) then
+     PTR = HALF
+     DONEFLAG = 1
+     !MOVE DOWN THE LIST
+  else if (GSPEC.gt.CHECK) then
+     FIRST = HALF
+     !MOVE UP THE LIST
+  else if (GSPEC.lt.CHECK) then
+     LAST = HALF - 1
+  end if
+  !DID NOT FIND A MATCH
+  if (LASTFLAG.eq.1.and. DONEFLAG.eq.0) then
+     !END ROUTINE, NO MATCH
+     if (GEOA.eq.9) then
         ERRFLAG = 6
         go to 999
+        !SET GEOA TO 9 AND RETRY THE SEARCH
+     else
+        GEOA = 9
+        GSPEC = GEOA*1000 + SPEC
+        FIRST = 1
+        LAST = 182
+        LASTFLAG = 0
      end if
+  end if
+  5 continue
 
-     COEFFS%A4 = R8CF(PTR,4)
-     COEFFS%B4 = R8CF(PTR,5)
+  !     END BINARY SEARCH
 
+  SPGRP = R8CF(PTR,3) + .5
+  if (SPGRP.ne.100.and. SPGRP.ne.300.and. SPGRP.ne.500) then
+     ERRFLAG = 6
+     go to 999
+  end if
+
+  COEFFS%A4 = R8CF(PTR,4)
+  COEFFS%B4 = R8CF(PTR,5)
+
+  DONEFLAG = 0
+  LASTFLAG = 0
+  FIRST = 1
+  LAST = 49
+  do 10, while (DONEFLAG.eq.0)
+  if (FIRST.eq.LAST) LASTFLAG = 1
+  !DETERMINE WHERE TO CHECK
+  HALF = ((LAST-FIRST+1)/2) + FIRST
+
+  !FOUND THE COEFFECIENTS
+  if ((INT(DIBMEN(HALF,1)+.5)).eq.SPEC) then
+     DIBCNT = HALF
+     DONEFLAG = 1
+     !MOVE DOWN THE LIST
+  else if ((INT(DIBMEN(HALF,1)+.5)).gt.SPEC) then
+     LAST = HALF -1
+     !MOVE UP THE LIST
+  else if ((INT(DIBMEN(HALF,1)+.5)).lt.SPEC) then
+     FIRST = HALF
+  end if
+  !DID NOT FIND A MATCH
+  if (LASTFLAG.eq.1.and. DONEFLAG.eq.0) then
+     ERRFLAG = 6
+     go to 999
+  end if
+  10 continue
+  !     END BINARY SEARCH
+
+  if (EQN.eq.0.or.EQN.eq.4.or. EQN.eq.8) then
+     COEFFS%FIXDI = DIBMEN(DIBCNT,2)
+     !         FIXDI = DIBMEN(DIBCNT,2)
+  else
+     COEFFS%FIXDI = DIBMEN(DIBCNT,3)
+     !         FIXDI = DIBMEN(DIBCNT,3)
+  end if
+
+  if (EQN.eq.0.or. EQN.eq.8) then
      DONEFLAG = 0
      LASTFLAG = 0
      FIRST = 1
      LAST = 49
-     do 10, while (DONEFLAG.eq.0)
+     do 20, while (DONEFLAG.eq.0)
      if (FIRST.eq.LAST) LASTFLAG = 1
      !DETERMINE WHERE TO CHECK
      HALF = ((LAST-FIRST+1)/2) + FIRST
 
      !FOUND THE COEFFECIENTS
-     if ((INT(DIBMEN(HALF,1)+.5)).eq.SPEC) then
-        DIBCNT = HALF
+     if ((INT(TOTAL(HALF,1)+.5)) .eq. SPEC) then
+        TOTCNT = HALF
         DONEFLAG = 1
         !MOVE DOWN THE LIST
-     else if ((INT(DIBMEN(HALF,1)+.5)).gt.SPEC) then
+     else if ((INT(TOTAL(HALF,1)+.5)).gt.SPEC) then
         LAST = HALF -1
         !MOVE UP THE LIST
-     else if ((INT(DIBMEN(HALF,1)+.5)).lt.SPEC) then
+     else if ((INT(TOTAL(HALF,1)+.5)).lt.SPEC) then
         FIRST = HALF
      end if
      !DID NOT FIND A MATCH
@@ -137,148 +170,110 @@ subroutine R8PREPCOEF(VOLEQ, COEFFS, ERRFLAG)
         ERRFLAG = 6
         go to 999
      end if
-     10 continue
-     !     END BINARY SEARCH
+     20 continue
 
-     if (EQN.eq.0.or.EQN.eq.4.or. EQN.eq.8) then
-        COEFFS%FIXDI = DIBMEN(DIBCNT,2)
-        !         FIXDI = DIBMEN(DIBCNT,2)
-     else
-        COEFFS%FIXDI = DIBMEN(DIBCNT,3)
-        !         FIXDI = DIBMEN(DIBCNT,3)
+     COEFFS%R = TOTAL (TOTCNT,2)
+     COEFFS%C = TOTAL (TOTCNT,3)
+     COEFFS%E = TOTAL (TOTCNT,4)
+     COEFFS%P = TOTAL (TOTCNT,5)
+     COEFFS%B = TOTAL (TOTCNT,6)
+     COEFFS%A = TOTAL (TOTCNT,7)
+     COEFFS%A17 = R8CF(PTR,14)
+     COEFFS%B17 = R8CF(PTR,15)
+
+  else if (EQN.eq.4) then
+     DONEFLAG = 0
+     LASTFLAG = 0
+     FIRST = 1
+     LAST = 49
+     do 40, while (DONEFLAG.eq.0)
+     if (FIRST.eq.LAST) LASTFLAG = 1
+     !DETERMINE WHERE TO CHECK
+     HALF = ((LAST-FIRST+1)/2) + FIRST
+
+     !FOUND THE COEFFECIENTS
+     if ((INT(FOUR(HALF,1)+.5)) .eq. SPEC) then
+        FOURCNT = HALF
+        DONEFLAG = 1
+        !MOVE DOWN THE LIST
+     else if ((INT(FOUR(HALF,1)+.5)).gt.SPEC) then
+        LAST = HALF -1
+        !MOVE UP THE LIST
+     else if ((INT(FOUR(HALF,1)+.5)).lt.SPEC) then
+        FIRST = HALF
+     end if
+     !DID NOT FIND A MATCH
+     if (LASTFLAG.eq.1.and. DONEFLAG.eq.0) then
+        ERRFLAG = 6
+        go to 999
+     end if
+     40 continue
+
+     COEFFS%R = FOUR (FOURCNT,2)
+     COEFFS%C = FOUR (FOURCNT,3)
+     COEFFS%E = FOUR (FOURCNT,4)
+     COEFFS%P = FOUR (FOURCNT,5)
+     COEFFS%Q = FOUR (FOURCNT,6)
+     COEFFS%A17 = R8CF(PTR,8)
+     COEFFS%B17 = R8CF(PTR,9)
+
+  else if (EQN.eq.7) then
+
+     I = 1
+     60 if (INT(SEVEN(I,1)+.5).lt.SPEC .and. I.le.15) then
+        I = I + 1
+        go to 60
+     else if (INT(SEVEN(I,1)+.5).gt.SPEC .or. I.gt.15) then
+        ERRFLAG = 6
+        go to 999
      end if
 
-     if (EQN.eq.0.or. EQN.eq.8) then
-        DONEFLAG = 0
-        LASTFLAG = 0
-        FIRST = 1
-        LAST = 49
-        do 20, while (DONEFLAG.eq.0)
-        if (FIRST.eq.LAST) LASTFLAG = 1
-        !DETERMINE WHERE TO CHECK
-        HALF = ((LAST-FIRST+1)/2) + FIRST
+     COEFFS%R = SEVEN (I,2)
+     COEFFS%C = SEVEN (I,3)
+     COEFFS%E = SEVEN (I,4)
+     COEFFS%P = SEVEN (I,5)
+     COEFFS%Q = SEVEN (I,6)
+     COEFFS%A17 = R8CF(PTR,10)
+     COEFFS%B17 = R8CF(PTR,11)
 
-        !FOUND THE COEFFECIENTS
-        if ((INT(TOTAL(HALF,1)+.5)) .eq. SPEC) then
-           TOTCNT = HALF
-           DONEFLAG = 1
-           !MOVE DOWN THE LIST
-        else if ((INT(TOTAL(HALF,1)+.5)).gt.SPEC) then
-           LAST = HALF -1
-           !MOVE UP THE LIST
-        else if ((INT(TOTAL(HALF,1)+.5)).lt.SPEC) then
-           FIRST = HALF
-        end if
-        !DID NOT FIND A MATCH
-        if (LASTFLAG.eq.1.and. DONEFLAG.eq.0) then
-           ERRFLAG = 6
-           go to 999
-        end if
-        20 continue
+  else if (EQN.eq.9) then
 
-        COEFFS%R = TOTAL (TOTCNT,2)
-        COEFFS%C = TOTAL (TOTCNT,3)
-        COEFFS%E = TOTAL (TOTCNT,4)
-        COEFFS%P = TOTAL (TOTCNT,5)
-        COEFFS%B = TOTAL (TOTCNT,6)
-        COEFFS%A = TOTAL (TOTCNT,7)
-        COEFFS%A17 = R8CF(PTR,14)
-        COEFFS%B17 = R8CF(PTR,15)
+     DONEFLAG = 0
+     LASTFLAG = 0
+     FIRST = 1
+     LAST = 34
+     do 80, while (DONEFLAG.eq.0)
+     if (FIRST.eq.LAST) LASTFLAG = 1
+     !DETERMINE WHERE TO CHECK
+     HALF = ((LAST-FIRST+1)/2) + FIRST
 
-     else if (EQN.eq.4) then
-        DONEFLAG = 0
-        LASTFLAG = 0
-        FIRST = 1
-        LAST = 49
-        do 40, while (DONEFLAG.eq.0)
-        if (FIRST.eq.LAST) LASTFLAG = 1
-        !DETERMINE WHERE TO CHECK
-        HALF = ((LAST-FIRST+1)/2) + FIRST
-
-        !FOUND THE COEFFECIENTS
-        if ((INT(FOUR(HALF,1)+.5)) .eq. SPEC) then
-           FOURCNT = HALF
-           DONEFLAG = 1
-           !MOVE DOWN THE LIST
-        else if ((INT(FOUR(HALF,1)+.5)).gt.SPEC) then
-           LAST = HALF -1
-           !MOVE UP THE LIST
-        else if ((INT(FOUR(HALF,1)+.5)).lt.SPEC) then
-           FIRST = HALF
-        end if
-        !DID NOT FIND A MATCH
-        if (LASTFLAG.eq.1.and. DONEFLAG.eq.0) then
-           ERRFLAG = 6
-           go to 999
-        end if
-        40 continue
-
-        COEFFS%R = FOUR (FOURCNT,2)
-        COEFFS%C = FOUR (FOURCNT,3)
-        COEFFS%E = FOUR (FOURCNT,4)
-        COEFFS%P = FOUR (FOURCNT,5)
-        COEFFS%Q = FOUR (FOURCNT,6)
-        COEFFS%A17 = R8CF(PTR,8)
-        COEFFS%B17 = R8CF(PTR,9)
-
-     else if (EQN.eq.7) then
-
-        I = 1
-        60 if (INT(SEVEN(I,1)+.5).lt.SPEC .and. I.le.15) then
-           I = I + 1
-           go to 60
-        else if (INT(SEVEN(I,1)+.5).gt.SPEC .or. I.gt.15) then
-           ERRFLAG = 6
-           go to 999
-        end if
-
-        COEFFS%R = SEVEN (I,2)
-        COEFFS%C = SEVEN (I,3)
-        COEFFS%E = SEVEN (I,4)
-        COEFFS%P = SEVEN (I,5)
-        COEFFS%Q = SEVEN (I,6)
-        COEFFS%A17 = R8CF(PTR,10)
-        COEFFS%B17 = R8CF(PTR,11)
-
-     else if (EQN.eq.9) then
-
-        DONEFLAG = 0
-        LASTFLAG = 0
-        FIRST = 1
-        LAST = 34
-        do 80, while (DONEFLAG.eq.0)
-        if (FIRST.eq.LAST) LASTFLAG = 1
-        !DETERMINE WHERE TO CHECK
-        HALF = ((LAST-FIRST+1)/2) + FIRST
-
-        !FOUND THE COEFFECIENTS
-        if ((INT(NINE(HALF,1)+.5)) .eq. SPEC) then
-           NINECNT = HALF
-           DONEFLAG = 1
-           !MOVE DOWN THE LIST
-        else if ((INT(NINE(HALF,1)+.5)).gt.SPEC) then
-           LAST = HALF -1
-           !MOVE UP THE LIST
-        else if ((INT(NINE(HALF,1)+.5)).lt.SPEC) then
-           FIRST = HALF
-        end if
-        !DID NOT FIND A MATCH
-        if (LASTFLAG.eq.1.and. DONEFLAG.eq.0) then
-           ERRFLAG = 6
-           go to 999
-        end if
-        80 continue
-        COEFFS%R = NINE(NINECNT,2)
-        COEFFS%C = NINE(NINECNT,3)
-        COEFFS%E = NINE(NINECNT,4)
-        COEFFS%P = NINE(NINECNT,5)
-        COEFFS%Q = NINE(NINECNT,6)
-        COEFFS%A17 = R8CF(PTR,12)
-        COEFFS%B17 = R8CF(PTR,13)
-
+     !FOUND THE COEFFECIENTS
+     if ((INT(NINE(HALF,1)+.5)) .eq. SPEC) then
+        NINECNT = HALF
+        DONEFLAG = 1
+        !MOVE DOWN THE LIST
+     else if ((INT(NINE(HALF,1)+.5)).gt.SPEC) then
+        LAST = HALF -1
+        !MOVE UP THE LIST
+     else if ((INT(NINE(HALF,1)+.5)).lt.SPEC) then
+        FIRST = HALF
      end if
+     !DID NOT FIND A MATCH
+     if (LASTFLAG.eq.1.and. DONEFLAG.eq.0) then
+        ERRFLAG = 6
+        go to 999
+     end if
+     80 continue
+     COEFFS%R = NINE(NINECNT,2)
+     COEFFS%C = NINE(NINECNT,3)
+     COEFFS%E = NINE(NINECNT,4)
+     COEFFS%P = NINE(NINECNT,5)
+     COEFFS%Q = NINE(NINECNT,6)
+     COEFFS%A17 = R8CF(PTR,12)
+     COEFFS%B17 = R8CF(PTR,13)
 
   end if
+
   999 continue
 
   return

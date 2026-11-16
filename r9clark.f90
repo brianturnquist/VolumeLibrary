@@ -1282,7 +1282,19 @@ subroutine r9ht(stemHt,COEFFS,stmDib,errFlg)
   G = (1.0-4.5/totHt)**r
   W = (c+e/dbhIb**3)/(1-G)
   X = (1.0-4.5/totHt)**p
-  Y = (1.0-17.3/totHt)**p
+  ! A power below the normal real range traps before the height is selected.
+  ! Test the original real-valued base in double precision so the range check
+  ! cannot underflow. Keep the original power for every normal-range result;
+  ! the vanishing term is zero, as in the R9CUFT underflow guard.
+  if (totHt.gt.17.3.and.p.gt.0.0) then
+     if (dble(p)*log(dble(1.0-17.3/totHt)).lt.log(dble(tiny(Y)))) then
+        Y = 0.0
+     else
+        Y = (1.0-17.3/totHt)**p
+     end if
+  else
+     Y = (1.0-17.3/totHt)**p
+  end if
   Z = (dbhIb**2-dib17**2)/(X-Y)
 
   !-----Set height indicator variables
