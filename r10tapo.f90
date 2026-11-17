@@ -399,11 +399,12 @@ function DD2MI(RH,R32,DBHOB,H)
   ! Variables
   real    :: RH,DBHOB,H,DD2MI,R32
 
+  ! Keep libgcc integer-power rounding: square factors, then multiply low bit first.
   DD2MI = RH**1.5 +&
        &((-0.0052554*H + 0.000034947*H**2 + (0.104477*H)/DBHOB) *&
        &(RH**1.5 - RH**3)) +&
        &((7.76807/DBHOB**2 - 0.0000094852*H**2 - (0.011351*H)/DBHOB) *&
-       &(RH**1.5 - R32**32))
+       &(RH**1.5 - ((R32**8)**4)))
 
   !     XA = R**1.5
   !     XB = R**3
@@ -461,7 +462,7 @@ function FF(RH,R32,DBHOB,H)
   FF = 0.4 * RH**2.5 + (-0.0052554 * H + 0.000034947 * H**2&
        &+ 0.104477 * H/DBHOB) * (0.4 * RH**2.5 - 0.25 * RH**4.) +&
        &(7.76807/DBHOB**2 - 0.0000094852*H**2 - 0.011351*H/DBHOB)*&
-       &(0.4 * RH**2.5 - (1./33.) * R32**33)
+       &(0.4 * RH**2.5 - (1./33.) * (R32*(R32**8)**4))
   return
 end
 

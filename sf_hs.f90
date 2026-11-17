@@ -90,7 +90,7 @@ subroutine SF_HS(JSP,GEOSUB,IEXTRA,SETOPT,DBH,TOTALH,DBTBH,&
   else
      !                                 SOLUTION IS ABOVE THE INFLECTION
      TOOLOW = DI2
-     RZ = 1.0-(DIB/DI2)**2.0
+     RZ = 1.0-(DIB/DI2)**2
      RH = RHI2 + (1-RHI2)*RZ
   end if
 

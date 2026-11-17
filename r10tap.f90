@@ -36,9 +36,10 @@ subroutine R10TAP(TAPEQU,DBHOB,HTTOT,HTUP,D2)
   !     THIS EQUATION IS USED WHEN CALCULATING DIB'S ALONG THE TREE STEM
   !     THIS EQUATION NUMBER 1051 AND 1052
 
+  ! Keep libgcc integer-power rounding: square factors, then multiply low bit first.
   DD2MI(RH,RH32,D,H) = RH**1.5 + (-.0052554*H + 0.000034947*H**2&
        &+ 0.104477*H/D) * (RH**1.5 - RH**3) + (7.76807/D**2&
-       &- 0.0000094852*H**2 - 0.011351*H/D) * (RH**1.5-RH32**32)
+       &- 0.0000094852*H**2 - 0.011351*H/D) * (RH**1.5-((RH32**8)**4))
 
   !     BARK THICKNESS EQUATION
 
@@ -52,7 +53,7 @@ subroutine R10TAP(TAPEQU,DBHOB,HTTOT,HTUP,D2)
   DVR(RH,RH32,H,DBHOB) = RH**1.5 + ((RH**1.5 - RH**3) *&
        &(5.17703194/DBHOB**2 - 0.12516819*DBHOB + 0.02537037*H&
        &- 0.00004193*H**2 + 0.00155481 * DBHOB**2)) + ((RH**1.5&
-       &- RH32**32) * (-0.00002070*H**2 + 0.24125235/DBHOB**2))
+       &- ((RH32**8)**4)) * (-0.00002070*H**2 + 0.24125235/DBHOB**2))
 
   !     BARK THICKNESS EQUATION
 
@@ -65,7 +66,7 @@ subroutine R10TAP(TAPEQU,DBHOB,HTTOT,HTUP,D2)
 
   DVA(RH,RH32,H,DBHOB) = RH**1.5+((RH**1.5-RH**3)*(-0.02834001*DBHOB&
        &+ 0.00007123*H**2 + 0.06709114*H/DBHOB))&
-       &+ ((RH**1.5 - RH32**32) * (.00282021*DBHOB - 0.00002277*H**2&
+       &+ ((RH**1.5 - ((RH32**8)**4)) * (.00282021*DBHOB - 0.00002277*H**2&
        &+ 1.06064717/DBHOB**2 - 0.00528349*H/DBHOB))
 
   !    BARK THICKNESS EQUATION FOR ALASKA YELLOW CEDAR
@@ -80,7 +81,7 @@ subroutine R10TAP(TAPEQU,DBHOB,HTTOT,HTUP,D2)
        &+ (8.2375*(RH**1.5 - RH**3.)*(H)*(10**(-3.)))&
        &- (4.964*(RH**1.5 - RH32**32.)*(H*DBHOB)*(10**(-5.)))&
        &+ (3.773*(RH**1.5 - RH32**32.)*(H**0.5)*(10**(-3.)))&
-       &- (7.417*(RH**1.5 - RH40**40.)*(H**2.)*(10**(-6.)))
+       &- (7.417*(RH**1.5 - RH40**40.)*(H**2)*(10**(-6.)))
 
   IAC = 'AC'
   IRC = 'RC'

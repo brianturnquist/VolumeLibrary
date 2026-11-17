@@ -170,7 +170,7 @@ function VEQ (DBHOB,HT,MODEL,B0,B1,B2,B3,B4,B5,B6,B7,B8,ERRFLAG)
   if (MODEL.eq.6) VTEMP = B0 + B1*D*D +&
        &B2*HT + B3*D2H
   if (MODEL.eq.7) VTEMP = EXP (B0 * (HT ** B1) *&
-       &((1.0 - (4.0 / (0.78 * D)) ** 2.0) ** 2.0) ** B2)
+       &((1.0 - (4.0 / (0.78 * D)) ** 2) ** 2) ** B2)
   if (MODEL.eq.9) VTEMP = B0 + B1*D2H/1000.0 +&
        &B2*D*HT*HT/1000.0 + B3*D*D + B4*HT*HT*HT/10000.0 +&
        &B5*D*D/HT + B6*D*D*HT*HT/100000.0 +&

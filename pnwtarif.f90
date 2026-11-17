@@ -126,11 +126,12 @@ subroutine PNWTARIF(VOLEQ,DBHOB,HTTOT,MTOPP,VOL,BFPFLG,CUPFLG,&
         end if
         Z = (THT-0.5-DBH/24)/(THT-4.5)
         Z25 = Z**2.5
+        ! Keep libgcc integer-power rounding: square factors, then multiply low bit first.
         F = 0.3651*Z25-7.9032*Z25*DBH/1000.0+3.295*Z25 * THT/1000.0&
              &- 1.9856*Z25*THT*DBH/100000.0-2.9668*Z25*THT**2/1000000.0&
              &+ 1.5092*Z25*THT**.5/1000.0+4.9395*Z**4*DBH/1000.0&
-             &- 2.05937*Z**4*THT/1000.0+1.5042*Z**33*THT*DBH/1000000.0&
-             &- 1.1433*Z**33*THT**0.5/10000.0+1.809*Z**41*THT**2/10000000.0
+             &- 2.05937*Z**4*THT/1000.0+1.5042*(Z*(Z**8)**4)*THT*DBH/1000000.0&
+             &- 1.1433*(Z*(Z**8)**4)*THT**0.5/10000.0+1.809*((Z*Z**8)*(Z**8)**4)*THT**2/10000000.0
         CVT = 0.00545415*DBH**2*(THT-4.5)*F
         CVTS = CVT/(0.9679-0.105*0.5525**(DBH-1.5))
         call GET_TARIF_FROM_CVT(DBH,CVT,TARIF)

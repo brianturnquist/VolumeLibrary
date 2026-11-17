@@ -493,27 +493,28 @@ subroutine RELATIVE_DIA(SPN,DBH,HT,RELHT,GEOSUB,RELD)
   character(len=1) :: GEOSUB
   if (SPN .eq.98.or. SPN .eq.263) then
      if (GEOSUB .eq. 'A' .and. HT.le.110) then !Afognak Island trees <= 110 ft.
+        ! Keep libgcc integer-power rounding: square factors, then multiply low bit first.
         RELD = RELHT ** 1.5 + (-0.0269451 * HT + 0.00023794 * HT ** 2&
              &+ 0.148759 * HT / DBH) * (RELHT ** 1.5 - RELHT ** 3)&
              &+ (0.0974044-0.0000145706 * HT ** 2- 0.0156971*HT/DBH)&
-             &* (RELHT ** 1.5 - RELHT ** 32)
+             &* (RELHT ** 1.5 - ((RELHT**8)**4))
      else
         RELD = RELHT**1.5 + (-0.0052554*HT + 0.000034947*HT** 2&
              &+ 0.104477*HT/DBH) * (RELHT ** 1.5 - RELHT ** 3)&
              &+ (7.76807 / DBH ** 2 - 0.0000094852 * HT ** 2 -&
-             &0.011351 * HT / DBH) * (RELHT ** 1.5 - RELHT ** 32)
+             &0.011351 * HT / DBH) * (RELHT ** 1.5 - ((RELHT**8)**4))
      end if;
   else if (SPN .eq.42) then
      RELD = RELHT ** 1.5 + ((RELHT ** 1.5 - RELHT ** 3)&
           &* (-0.02834001 * DBH + 0.00007123 * HT ** 2&
-          &+ 0.06709114 * HT / DBH)) + ((RELHT ** 1.5 - RELHT ** 32)&
+          &+ 0.06709114 * HT / DBH)) + ((RELHT ** 1.5 - ((RELHT**8)**4))&
           &* (0.00282021*DBH - 0.00002277*HT**2 + 1.06064717/DBH**2&
           &- 0.00528349 * HT / DBH))
   else if (SPN .eq.242) then
      RELD = RELHT ** 1.5 + ((RELHT ** 1.5 - RELHT ** 3)&
           &* (5.17703194 / DBH ** 2 - 0.12516819 *DBH + 0.02537037 * HT&
           &- 0.00004193 * HT ** 2 + 0.00155481 * DBH ** 2)) +&
-          &((RELHT ** 1.5 - RELHT ** 32) * (-0.0000207 * HT ** 2&
+          &((RELHT ** 1.5 - ((RELHT**8)**4)) * (-0.0000207 * HT ** 2&
           &+ 0.24125235 / DBH ** 2))
   end if;
   return
@@ -532,17 +533,17 @@ subroutine VOLUME_RATIO(SPN,DBH,HT,RELHT,GEOSUB,VR)
         VR = 0.4*RELHT**2.5+(-0.0269451*HT+0.00023794*HT**2&
              &+ 0.148759*HT/DBH)*(0.4*RELHT**2.5-0.25*RELHT**4)&
              &+ (0.0974044-0.0000145706*HT**2-0.0156971*HT/DBH)&
-             &* (0.4 * RELHT ** 2.5 - (1.0 / 33.0) * RELHT ** 33)
+             &* (0.4 * RELHT ** 2.5 - (1.0 / 33.0) * (RELHT*(RELHT**8)**4))
      else
         VR = 0.4*RELHT**2.5+(-0.0052554*HT+0.000034947*HT**2&
              &+ 0.104477*HT/DBH)*(0.4*RELHT**2.5 - 0.25*RELHT**4)&
              &+ (7.76807/DBH**2 - 0.0000094852*HT**2 - 0.011351*HT/DBH)&
-             &* (0.4 * RELHT ** 2.5 - (1.0 / 33.0) *RELHT ** 33)
+             &* (0.4 * RELHT ** 2.5 - (1.0 / 33.0) *(RELHT*(RELHT**8)**4))
      end if;
   else if (SPN.eq.42) then
      VR = 0.4 * RELHT**2.5 + ((0.4*RELHT**2.5 - 0.25*RELHT**4)&
           &* (-0.02834001 *DBH + 0.00007123*HT**2 + 0.06709114*HT/DBH))&
-          &+ ((0.4 * RELHT ** 2.5 - 1.0 / 33.0 * RELHT ** 33) *&
+          &+ ((0.4 * RELHT ** 2.5 - 1.0 / 33.0 * (RELHT*(RELHT**8)**4)) *&
           &(0.00282021 * DBH - 0.00002277 * HT ** 2 + 1.06064717 / DBH**2&
           &- 0.00528349 * HT / DBH))
 
@@ -550,7 +551,7 @@ subroutine VOLUME_RATIO(SPN,DBH,HT,RELHT,GEOSUB,VR)
      VR = 0.4 * RELHT**2.5 + ((0.4 * RELHT ** 2.5 - 0.25 * RELHT**4)&
           &* (5.17703194 / DBH **2 - 0.12516819 * DBH + 0.02537037*HT&
           &- 0.00004193 * HT ** 2 + 0.00155481 *DBH ** 2))&
-          &+ ((0.4 * RELHT ** 2.5 - 1.0 / 33.0 * RELHT ** 33)&
+          &+ ((0.4 * RELHT ** 2.5 - 1.0 / 33.0 * (RELHT*(RELHT**8)**4))&
           &* (-0.0000207 * HT ** 2 + 0.24125235 / DBH ** 2))
   end if;
   return

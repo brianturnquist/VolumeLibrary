@@ -415,11 +415,12 @@ subroutine HILT_VOL(DBHOB,HTTOT,VOL,ERRFLG)
   DBH = DBHOB
   THT = HTTOT
   Z = ((THT-1.0)/(THT-4.5))
+  ! Keep libgcc integer-power rounding: square factors, then multiply low bit first.
   F = (0.4*(Z**(5.0/2.0))) + (1.21752E-3*THT*(Z**(5.0/2.0))) -&
        &(7.6098E-4*THT*(Z**4)) + (9.041E-5*DBH*THT*(Z**(5.0/2.0))) -&
        &(5.651E-5*DBH*THT*(Z**4)) + (1.28405E-3*DBH*(Z**(5.0/2.0))) -&
-       &(1.0355E-4*DBH*(Z**31)) - (8.48E-5*DBH*THT*(Z**(5.0/2.0))) +&
-       &(6.84E-6*DBH*THT*(Z**31))
+       &(1.0355E-4*DBH*(((((Z*Z**2)*Z**4)*Z**8)*(Z**8)**2))) - (8.48E-5*DBH*THT*(Z**(5.0/2.0))) +&
+       &(6.84E-6*DBH*THT*(((((Z*Z**2)*Z**4)*Z**8)*(Z**8)**2)))
   VOL(1) = 0.91*0.00545415*F*DBH*DBH*(THT-4.5)
   return
   end subroutine HILT_VOL

@@ -77,14 +77,14 @@ subroutine SF_TAPER (RHFW,RFLW,TAPCOE)
   G_A3 = (1./(a3-1.)-1./a3-1./(a3*a3) - 1./(a3-1.)**3.) / F_A3
 
   YB_MIN = YI1 + (2.*S3+K2)/3. + (s3-k2)*F_A3 /&
-       &(+1./(a3-1.) -1./a3 -1./(a3**2.) -1./(a3*a3*a3)  )
+       &(+1./(a3-1.) -1./a3 -1./(a3**2) -1./(a3*a3*a3)  )
   YB_MAX = YI1 + (2.*S3+K2)/3. + (S3-K2)/g_A3
 
   YB = yb_MIN + R2*(YB_MAX - YB_MIN)
 
   A0 = YI1
   A2 = ( YB - YI1 -(2.*s3+k2)/3.)/F_A3
-  A1 = ( K2 - s3 + a2 *(1./(a3-1.) -1./a3 -1./a3**2.)) / 3.
+  A1 = ( K2 - s3 + a2 *(1./(a3-1.) -1./a3 -1./a3**2)) / 3.
   A4 = S3
 
   !     convert to single precision
